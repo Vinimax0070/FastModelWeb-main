@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './CadEnd.css';
 import logo from './logo.png';
 import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom'; // Importe o useNavigate
-
-
+import { useNavigate } from 'react-router-dom';
 
 function Cadastro() {
     const [cep, setCep] = useState('');
@@ -12,11 +10,36 @@ function Cadastro() {
     const [numero, setNumero] = useState('');
     const [bairro, setBairro] = useState('');
     const [cidade, setCidade] = useState('');
+    const [erro, setErro] = useState('');
 
+    const numeroRef = useRef(null);
     const navigate = useNavigate();
 
     const handleFinalizar = () => {
-        navigate('/'); // Navega para a rota principal ('/') que � o seu Login
+        navigate('/'); // Navega para a rota principal ('/') que é o seu Login
+    };
+
+    const preencherEndereco = async () => {
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const data = await response.json();
+
+            if (data.erro) {
+                setErro('CEP não encontrado.');
+            } else {
+                setRua(data.logradouro);
+                setBairro(data.bairro);
+                setCidade(data.localidade);
+                setErro('');
+
+                // Move o foco para o campo número
+                if (numeroRef.current) {
+                    numeroRef.current.focus();
+                }
+            }
+        } catch (error) {
+            setErro('Erro ao consultar o CEP.');
+        }
     };
 
     return (
@@ -24,16 +47,20 @@ function Cadastro() {
             <Link to="/" className="back-arrow"> &larr; </Link>
             <img src={logo} alt="Fast Model Logo" className="logo" />
 
-            <form> {}
+            <form>
                 <div className="form-group">
                     <input
                         type="text"
                         placeholder="CEP*"
                         value={cep}
                         onChange={(e) => setCep(e.target.value)}
+                        onBlur={preencherEndereco}  // Chama a função ao perder o foco
                         required
                     />
                 </div>
+
+                {erro && <p className="erro">{erro}</p>}
+
                 <div className="form-group">
                     <input
                         type="text"
@@ -46,9 +73,10 @@ function Cadastro() {
                 <div className="form-group">
                     <input
                         type="text"
-                        placeholder="N�mero*"
+                        placeholder="Numero*"
                         value={numero}
                         onChange={(e) => setNumero(e.target.value)}
+                        ref={numeroRef}  // Ref para o campo número
                         required
                     />
                 </div>
